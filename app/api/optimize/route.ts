@@ -45,9 +45,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ optimizedPrompt }, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
+    
+    let errorMessage = "Unknown error occurred";
+    let errorCode = "UNKNOWN_ERROR";
+    let statusCode = 500;
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Handle specific Google Generative AI errors
+      if (error.message.includes("API key")) {
+        errorCode = "INVALID_API_KEY";
+        errorMessage = "Invalid or expired API key";
+        statusCode = 401;
+      } else if (error.message.includes("rate limit")) {
+        errorCode = "RATE_LIMIT_EXCEEDED";
+        errorMessage = "Rate limit exceeded. Please try again later";
+        statusCode = 429;
+      } else if (error.message.includes("model")) {
+        errorCode = "MODEL_NOT_AVAILABLE";
+        errorMessage = "The requested model is not available";
+        statusCode = 503;
+      } else if (error.message.includes("blocked")) {
+        errorCode = "CONTENT_BLOCKED";
+        errorMessage = "Content was blocked by safety filters";
+        statusCode = 400;
+      } else {
+        errorCode = "GENERATION_ERROR";
+      }
+    }
+
     return NextResponse.json(
-      { error: "Failed to optimize prompt" },
-      { status: 500 }
+      { 
+        error: errorMessage,
+        code: errorCode
+      },
+      { status: statusCode }
     );
   }
 }

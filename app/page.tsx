@@ -29,14 +29,18 @@ export default function Home() {
         body: JSON.stringify({ userInput }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to optimize prompt");
+        const errorCode = data.code || "UNKNOWN_ERROR";
+        const errorMessage = data.error || "Failed to optimize prompt";
+        setError(`[${errorCode}] ${errorMessage}`);
+        return;
       }
 
-      const data = await response.json();
       setOptimizedPrompt(data.optimizedPrompt);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(`[NETWORK_ERROR] ${err instanceof Error ? err.message : "Network request failed"}`);
     } finally {
       setLoading(false);
     }
@@ -77,8 +81,14 @@ export default function Home() {
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
-                {error}
+              <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                <div className="flex items-start gap-3">
+                  <div className="text-red-500 text-xl">⚠️</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-900 mb-1">Error</p>
+                    <p className="text-red-700 font-mono text-sm">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
 
